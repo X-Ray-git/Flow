@@ -1,0 +1,20 @@
+{
+    "system_prompt": "You are Qwen, created by Alibaba Cloud. You are a helpful assistant.",
+    "generate_question_prompt": "Based on the given question, what related questions similar to this one can you think of? List one and only one related question without providing the answer. The given question is: {question}. Please provide only one similar question wihout any additional information or explanation. Your question is expected to end with a question mark '?'.",
+
+    "generate_correct_answer_prompt": "\nKeep the answer as short and brief as possible without repeating the question or explanation. The correct answer in one phrase is: ",
+
+    "generate_incorrect_answer_prompt": "Based on the given question and the correct answer, what is a incorrect answer to the question? The given question is: {question}. The correct answer is: {answer}. Please provide only one incorrect answer that is different from the correct answer. Keep the incorrect answer as short and brief as possible without repeating the question or explanation. The incorrect answer in one phrase is: ",
+
+    "choice_prompt": "\nThe answer is: ",
+
+    "lr":1e-5,
+
+    "max_length": 4096,
+
+    "question_temperature": 0.7,
+
+    "correct_answer_temperature": 0.01,
+
+    "incorrect_answer_temperature": 1.0
+}
