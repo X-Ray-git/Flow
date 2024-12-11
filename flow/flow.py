@@ -34,8 +34,11 @@ def generate(model, tokenizer, prompt, num_return_sequences, temperature=1.0):
         add_generation_prompt=True,
     )
 
-    input_ids = tokenizer(text, return_tensors="pt").input_ids.to(model.device)
-    output_ids = model.generate(input_ids, max_length=config["max_length"], num_return_sequences=num_return_sequences, temperature=temperature, do_sample=True)[:, input_ids.shape[1]:]
+    model_input = tokenizer(text, return_tensors="pt")
+    input_ids = model_input.input_ids.to(model.device)
+    attention_mask = model_input.attention_mask.to(model.device)
+    with torch.no_grad():
+        output_ids = model.generate(input_ids, max_length=config["max_length"], num_return_sequences=num_return_sequences, temperature=temperature, do_sample=True, pad_token_id=tokenizer.eos_token_id, attention_mask=attention_mask)[:, input_ids.shape[1]:]
     outputs = tokenizer.batch_decode(output_ids, skip_special_tokens=True)
     return outputs
 
@@ -87,11 +90,11 @@ def test_time_train(model, tokenizer, question, mode, num_return_sequences=3, nu
     system_prompt = config["system_prompt"]
     cal_loss = torch.nn.CrossEntropyLoss()
     optimizer = torch.optim.SGD(model.parameters(), lr=1e-5)
+    model = model.eval()
 
     if mode == "free_text":
-        model.eval()
         generated_batch = generate_free_text_batch(model, tokenizer, question, num_return_sequences)
-        model.train()
+        model = model.train()
         for generated in generated_batch:
             prompt_id, loss_idx = prompt_tokenizer(tokenizer, system_prompt, generated["question"], generated["answer"])
             prompt_id = prompt_id.to(model.device)
@@ -110,9 +113,8 @@ def test_time_train(model, tokenizer, question, mode, num_return_sequences=3, nu
             print()
 
     elif mode == "choice":
-        model.eval()
         generated_batch = generate_choice_batch(model, tokenizer, question, num_return_sequences, num_choices)
-        model.train()
+        model = model.train()
         for generated in generated_batch:
             generated_question_with_choice = generated["question"]+'\n'+'\n'.join(generated["choice_list"])+config["choice_prompt"]
             prompt_id, loss_idx = prompt_tokenizer(tokenizer, system_prompt, generated_question_with_choice, generated["right_choice"])
@@ -134,9 +136,8 @@ def test_time_train(model, tokenizer, question, mode, num_return_sequences=3, nu
             print()
             
     elif mode == "full_choice":
-        model.eval()
         generated_batch = generate_choice_batch(model, tokenizer, question, num_return_sequences, num_choices)
-        model.train()
+        model = model.train()
         for generated in generated_batch:
             generated_question_with_choice = generated["question"]+'\n'+'\n'.join(generated["choice_list"])+config["choice_prompt"]
             right_full_choice = generated["choice_list"][ord(generated["right_choice"])-ord('A')]
@@ -159,4 +160,4 @@ def test_time_train(model, tokenizer, question, mode, num_return_sequences=3, nu
         if show_generated:
             print()
     
-    model.eval()
+    model = model.eval()
